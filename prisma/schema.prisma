@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id          Int          @id
+  first_name  String?      @db.VarChar(80)
+  last_name   String       @db.VarChar(80)
+  profile_pic String?      @db.VarChar
+  user_chatrooms  user_chatrooms_mapping[]
+  chats       chats[]
+}
+
+model chats {
+  id           BigInt   @id @default(autoincrement())
+  chat_room_id String   @db.VarChar(60)
+  sender_id    Int
+  message      String   @db.VarChar(1000)
+  created_at   DateTime @default(now()) @db.Timestamptz(3)
+  is_read      Boolean  @default(false)
+  user         user     @relation(fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "sender_id_fkey")
+
+  @@index([chat_room_id, created_at], map: "chatroom_date_idx")
+  @@index([sender_id], map: "fki_sender_id_fkey")
+}
+
+model user_chatrooms_mapping {
+  id           BigInt @id @default(autoincrement())
+  user_id      Int
+  chat_room_id String @db.VarChar(60)
+  user         user   @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_id_fkey")
+
+  @@unique([user_id, chat_room_id], map: "user_chatroom_uid")
+  @@index([user_id], map: "fki_user_id_fkey")
+}
